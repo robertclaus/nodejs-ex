@@ -1,4 +1,10 @@
 //  OpenShift sample Node application
+
+var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
+    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0',
+    mongoURL = process.env.OPENSHIFT_MONGODB_DB_URL || process.env.MONGO_URL,
+    mongoURLLabel = "";
+/*
 var express = require('express'),
     app     = express(),
     morgan  = require('morgan');
@@ -8,10 +14,7 @@ Object.assign=require('object-assign')
 app.engine('html', require('ejs').renderFile);
 app.use(morgan('combined'))
 
-var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
-    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0',
-    mongoURL = process.env.OPENSHIFT_MONGODB_DB_URL || process.env.MONGO_URL,
-    mongoURLLabel = "";
+
 
 if (mongoURL == null && process.env.DATABASE_SERVICE_NAME) {
   var mongoServiceName = process.env.DATABASE_SERVICE_NAME.toUpperCase(),
@@ -101,5 +104,86 @@ initDb(function(err){
 
 app.listen(port, ip);
 console.log('Server running on http://%s:%s', ip, port);
+
+*/
+
+//WebSocket Server
+var WebSocketServer = require('websocket').server;
+let server = http.createServer(function (req, res) {
+		if (url == '/health') {
+			res.writeHead(200);
+			res.end();
+		} else if (url == '/info/gen' || url == '/info/poll') {
+			res.setHeader('Content-Type', 'application/json');
+			res.setHeader('Cache-Control', 'no-cache, no-store');
+			res.end(JSON.stringify(sysInfo[url.slice(6)]()));
+		}
+	});
+server.listen(env.NODE_PORT || 3000, env.NODE_IP || 'localhost', function () {
+});
+
+console.log('Server running on http://%s:%s', ip, port);
+
+var wsServer = new WebSocketServer({
+		httpServer : server
+	});
+var count = 0;
+var clients = {};
+var clientRooms ={};
+var roomModes ={};
+var roomHost ={};
+
+wsServer.on('request', function (r) {
+	console.log(r);
+	var connection = r.accept('echo-protocol', r.origin);
+	var id = count++;
+	clients[id] = connection;
+	clientRooms[id]="default";
+	var idPassMessage = '{"connectionId":"' + id + '"}';
+	clients[id].sendUTF(idPassMessage);
+	connection.on('message', function (message) {
+		
+		var msgString = message.utf8Data;
+		console.log(message);
+		
+		var room = undefined;
+		var configMessage=false;
+		if(msgString[0]=="*")
+		{
+			msgString=msgString.slice(1,msgString.length);
+			try {
+				var JSONVersion=JSON.parse(msgString);
+				if(JSONVersion['room']!=undefined)
+				{
+					clientRooms[id]=JSONVersion['room'];
+				}
+				if(JSONVersion['roomMode']!=undefined)
+				{
+					roomModes[clientRooms[id]]=JSONVersion['roomMode'];
+				}
+				if(JSONVersion['amHost']!=undefined && JSONVersion['amHost']=="true")
+				{
+					roomHost[clientRooms[id]]=id;
+				}
+			}catch(err){}
+		}
+		if(roomModes[clientRooms[id]]=="controller"&&roomHost[clientRooms[id]]!=id)
+		{
+			clients[roomHost[clientRooms[id]]].sendUTF(msgString);
+		}
+		else
+		{
+			for (var i in clients) {
+				if (i != id&&clientRooms[i]==clientRooms[id]) {
+					clients[i].sendUTF(msgString);
+				}
+			}
+		}
+	});
+
+	connection.on('close', function (reasonCode, description) {
+		delete clients[id];
+	});
+});
 
 module.exports = app ;
