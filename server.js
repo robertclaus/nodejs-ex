@@ -120,7 +120,7 @@ let server = http.createServer(function (req, res) {
 			res.end(JSON.stringify(sysInfo[url.slice(6)]()));
 		}
 	});
-server.listen(process.env.NODE_PORT || 3000, process.env.NODE_IP || 'localhost', function () {
+server.listen(port, ip, function () {
 });
 
 console.log('Server running on http://%s:%s', ip, port);
