@@ -187,4 +187,4 @@ wsServer.on('request', function (r) {
 	});
 });
 
-module.exports = app ;
+//module.exports = app ;
