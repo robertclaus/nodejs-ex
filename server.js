@@ -111,6 +111,7 @@ console.log('Server running on http://%s:%s', ip, port);
 const http = require('http');
 var WebSocketServer = require('websocket').server;
 let server = http.createServer(function (req, res) {
+		let url = req.url;
 		if (url == '/health') {
 			res.writeHead(200);
 			res.end();
