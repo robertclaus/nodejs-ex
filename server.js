@@ -112,6 +112,7 @@ const http = require('http');
 var WebSocketServer = require('websocket').server;
 let server = http.createServer(function (req, res) {
 		let url = req.url;
+		console.log(url);
 		if (url == '/health') {
 			res.writeHead(200);
 			res.end("Returned from health!");
