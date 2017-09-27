@@ -12,7 +12,8 @@
     "mongodb": "^2.1.16",
     "morgan": "^1.7.0",
     "object-assign":"4.1.0",
-	"websocket":"^1.0.24"
+	"websocket":"^1.0.24",
+	"http":"^0.0.1"
   },
   "engine": {
     "node": "*",
